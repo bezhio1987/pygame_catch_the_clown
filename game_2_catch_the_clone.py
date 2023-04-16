@@ -52,14 +52,14 @@ lives_rect.topright = (WINDOW_WIDTH-50 , 50)
 
 game_over_text = font.render("Game Over!", True, BLUE, YELLOW)
 game_over_rect = game_over_text.get_rect()
-game_over_rect.center = (WINDOW_HEIGHT//2 , WINDOW_HEIGHT//2)
+game_over_rect.center = (WINDOW_WIDTH//2 , WINDOW_HEIGHT//2)
 
 continue_text = font.render("Click anywhere to play again!", True, BLUE, YELLOW)
 continue_rect = continue_text.get_rect()
-continue_rect.center = (WINDOW_HEIGHT//2 , WINDOW_HEIGHT//2+ 60)
+continue_rect.center = (WINDOW_WIDTH//2 , WINDOW_HEIGHT//2+ 60)
 
 #set music
-hit_sound = pygame.mixer.Sound("click_sound.wav")
+click_sound = pygame.mixer.Sound("click_sound.wav")
 miss_sound = pygame.mixer.Sound("miss_sound.wav")
 pygame.mixer.music.load("ctc_background_music.wav")
 
@@ -79,19 +79,68 @@ running = True
 while running:
     #lopp through a list of ecents 
     for event in pygame.event.get():
-        print(event)
         if event.type == pygame.QUIT:
            running = False 
-    
+         
+         #click  
+        if event.type == pygame.MOUSEBUTTONDOWN:
+           mouse_x = event.pos[0] 
+           mouse_y = event.pos[1] 
+           
+            #the clown is clicked?
+           if clown_rect.collidepoint(mouse_x, mouse_y):
+                click_sound.play()
+                score += 1
+                clown_velocity += CLOWN_ACCELERATION                
+                #change the clown direction
+                clown_dx = random.choice([-1, 1])
+                clown_dy = random.choice([-1, 1])
+           else:
+               player_lives -= 1
+               miss_sound.play()
+
+                
+
+    #update HUD
+    score_text = font.render("score: "+str(score), True, YELLOW)
+    lives_text = font.render("lives: "+str(player_lives), True, YELLOW)
+
+    #check for game over
+    if player_lives == 0:
+            display_surface.blit(game_over_text, game_over_rect)
+            display_surface.blit(continue_text, continue_rect)
+            pygame.display.update()
+            
+            #pause the game
+            pygame.mixer.music.stop()
+            is_paused = True
+            while is_paused:
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        score = 0
+                        player_lives = PLAYER_STARTING_LIVES
+                        clown_rect.center = (WINDOW_WIDTH//2, WINDOW_HEIGHT//2)
+                        clown_velocity = CLOWN_STARTING_VELOCITY
+                        clown_dx = random.choice([-1,1])  # direction in x 
+                        clown_dy = random.choice([-1,1])
+                        pygame.mixer.music.play(-1 , 0,0)
+                        is_paused = False
+                        
+                    if event.type == pygame.QUIT:
+                            running = False 
+                            is_paused = False
+
+
+
     #move the clown
     clown_rect.x += clown_dx*clown_velocity
     clown_rect.y += clown_dy*clown_velocity
 
     #bounce the clown when its off the screen
     if clown_rect.left <= 0 or clown_rect.right >= WINDOW_WIDTH:
-        clown_dx *= -1
+        clown_dx = clown_dx * -1
     if clown_rect.top <=0 or clown_rect.bottom >= WINDOW_HEIGHT:
-        clown_dy *= -1
+        clown_dy = clown_dy * -1
      
     #blit the bg
     display_surface.blit(bg_img, bg_rect)
